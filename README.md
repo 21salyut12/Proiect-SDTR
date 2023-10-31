@@ -18,7 +18,7 @@ Users can remotely control the system, toggle detection on/off, and choose their
 
 ## Hardware Requirements
 
-- ESP32 microcontroller (ESP32F030F4P6)
+- ESP32 microcontroller
 - Ultrasonic sensors (HC-SR05 or HC-SR04)
 - LEDs and resistors
 - HC-05 Bluetooth module
@@ -27,8 +27,6 @@ Users can remotely control the system, toggle detection on/off, and choose their
 
 ## Software Requirements
 
-- ESP32CubeIDE
-- ESP32 HAL Library
 - FreeRTOS (Real-Time Operating System)
 - Mobile app development tools
 - Bluetooth communication libraries
