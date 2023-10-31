@@ -5,7 +5,7 @@
 
 ## Project Overview
 
-This project implements a security system using an STM32 microcontroller that detects objects in its vicinity using ultrasonic sensors.
+This project implements a security system using an ESP32 microcontroller that detects objects in its vicinity using ultrasonic sensors.
 When an object is detected, the system triggers an alert by turning on an LED indicator and sending a notification with a timestamp and distance measurement to a user's smartphone via Bluetooth.
 Users can remotely control the system, toggle detection on/off, and choose their preferred measurement system (metric/imperial).
 
@@ -18,7 +18,7 @@ Users can remotely control the system, toggle detection on/off, and choose their
 
 ## Hardware Requirements
 
-- STM32 microcontroller (STM32F030F4P6)
+- ESP32 microcontroller (ESP32F030F4P6)
 - Ultrasonic sensors (HC-SR05 or HC-SR04)
 - LEDs and resistors
 - HC-05 Bluetooth module
@@ -27,8 +27,8 @@ Users can remotely control the system, toggle detection on/off, and choose their
 
 ## Software Requirements
 
-- STM32CubeIDE
-- STM32 HAL Library
+- ESP32CubeIDE
+- ESP32 HAL Library
 - FreeRTOS (Real-Time Operating System)
 - Mobile app development tools
 - Bluetooth communication libraries
