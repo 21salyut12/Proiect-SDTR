@@ -1,5 +1,5 @@
-#define TRIGGER_PIN 4 // Replace with the actual trigger pin connected to D4 on the ESP32
-#define ECHO_PIN 2    // Replace with the actual echo pin connected to D2 on the ESP32
+#define TRIGGER_PIN 4 // Trigger pin connected to D4 on the ESP32
+#define ECHO_PIN 2    // Echo pin connected to D2 on the ESP32
 
 volatile uint32_t pulseStart = 0;
 volatile uint32_t pulseEnd = 0;
