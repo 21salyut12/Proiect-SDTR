@@ -14,55 +14,55 @@ void IRAM_ATTR handleEcho() {
   }
 }
 
-void senderTask(void *param) {
-  (void) param;
-  while (1) {
-    // Perform other tasks or operations here if needed
-
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
-  }
-}
-
-void receiverTask(void *param) {
-  (void) param;
+void measuredDistance(void *pvParameters) {
+  (void)pvParameters;
+  
   pinMode(TRIGGER_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
-
   attachInterrupt(digitalPinToInterrupt(ECHO_PIN), handleEcho, CHANGE);
-
-  for (int i = 0; i < 10; i++) {
+  
+  for (;;) {
     digitalWrite(TRIGGER_PIN, LOW);
     delayMicroseconds(2);
+
+    // Trigger the sensor by sending a 10 microsecond pulse
     digitalWrite(TRIGGER_PIN, HIGH);
     delayMicroseconds(10);
     digitalWrite(TRIGGER_PIN, LOW);
 
-    // Wait for echo
-    while (!echoReceived) {
-      vTaskDelay(10 / portTICK_PERIOD_MS);
+    // Wait for echo or timeout
+    unsigned long timeout = micros() + 30000; // Set a timeout of 30ms
+    while (!echoReceived && micros() < timeout) {
+      // Delay added here to avoid busy-waiting
+      vTaskDelay(pdMS_TO_TICKS(1));
     }
 
-    // Calculate distance
-    uint32_t duration = pulseEnd - pulseStart;
-    int distance = duration * 0.034 / 2; // Calculate distance from duration
+    // Calculate distance if echo is received
+    if (echoReceived) {
+      uint32_t duration = pulseEnd - pulseStart;
+      float distance_cm = duration * 0.034 / 2.0; // Calculate distance in centimeters
 
-    Serial.print("Distance: ");
-    Serial.print(distance);
-    Serial.println(" cm");
+      // Print distance to Serial Monitor
+      Serial.print("Distance: ");
+      Serial.print(distance_cm);
+      Serial.println(" cm");
 
-    echoReceived = false; // Reset flag
-    vTaskDelay(3000 / portTICK_PERIOD_MS); // Delay before next reading
+      echoReceived = false; // Reset flag
+    } else {
+      Serial.println("No echo received");
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(3000)); // Delay before next reading
   }
 }
 
 void setup() {
   Serial.begin(115200);
   while (!Serial) {} // Wait for Serial to initialize
-
-  xTaskCreatePinnedToCore(senderTask, "Sender", configMINIMAL_STACK_SIZE, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
-  xTaskCreatePinnedToCore(receiverTask, "Receiver", configMINIMAL_STACK_SIZE * 2, NULL, 1, NULL, ARDUINO_RUNNING_CORE);
+  
+  xTaskCreate(measuredDistance, "MeasuredDistance", configMINIMAL_STACK_SIZE * 2, NULL, 1, NULL);
 }
 
 void loop() {
-  // Nothing needed here as FreeRTOS tasks handle the execution
+  // Leave loop() empty as FreeRTOS tasks handle the execution
 }
