@@ -1,5 +1,5 @@
-#define TRIGGER_PIN 4 // Trigger pin connected to D4 on the ESP32
-#define ECHO_PIN 2    // Echo pin connected to D2 on the ESP32
+#define TRIGGER_PIN 18 // Trigger pin connected to D18 on the ESP32
+#define ECHO_PIN 5    // Echo pin connected to D5 on the ESP32
 
 volatile uint32_t pulseStart = 0;
 volatile uint32_t pulseEnd = 0;
@@ -20,36 +20,50 @@ void measuredDistance(void *pvParameters) {
   pinMode(TRIGGER_PIN, OUTPUT);
   pinMode(ECHO_PIN, INPUT);
   attachInterrupt(digitalPinToInterrupt(ECHO_PIN), handleEcho, CHANGE);
+
+  float smoothedDistance = 0; // Variable to store smoothed distance
+  float alpha = 0.2; // Smoothing factor (adjustable)
+  const float maxRange = 200.0; // Maximum reasonable range (adjustable)
+  const int maxValidReadings = 4; // Maximum valid readings to consider for averaging
   
   for (;;) {
-    digitalWrite(TRIGGER_PIN, LOW);
-    delayMicroseconds(2);
+    unsigned long totalDuration = 0;
+    int validReadings = 0;
 
-    // Trigger the sensor by sending a 10 microsecond pulse
-    digitalWrite(TRIGGER_PIN, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(TRIGGER_PIN, LOW);
+    for (int i = 0; i < maxValidReadings; ++i) {
+      digitalWrite(TRIGGER_PIN, LOW);
+      delayMicroseconds(2);
 
-    // Wait for echo or timeout
-    unsigned long timeout = micros() + 30000; // Set a timeout of 30ms
-    while (!echoReceived && micros() < timeout) {
-      // Delay added here to avoid busy-waiting
-      vTaskDelay(pdMS_TO_TICKS(1));
+      // Trigger the sensor by sending a 10 microsecond pulse
+      digitalWrite(TRIGGER_PIN, HIGH);
+      delayMicroseconds(10);
+      digitalWrite(TRIGGER_PIN, LOW);
+
+      unsigned long timeout = micros() + 23200; // Adjusted timeout for 4 meters
+      while (!echoReceived && micros() < timeout) {
+        delayMicroseconds(10);
+      }
+
+      if (echoReceived) {
+        totalDuration += pulseEnd - pulseStart;
+        echoReceived = false;
+        validReadings++;
+      }
+      vTaskDelay(pdMS_TO_TICKS(20)); // Small delay between readings
     }
 
-    // Calculate distance if echo is received
-    if (echoReceived) {
-      uint32_t duration = pulseEnd - pulseStart;
-      float distance_cm = duration * 0.034 / 2.0; // Calculate distance in centimeters
+    if (validReadings > 0) {
+      float distance_cm = (totalDuration / validReadings) * 0.034 / 2.0; // Calculate average distance
 
-      // Print distance to Serial Monitor
-      Serial.print("Distance: ");
-      Serial.print(distance_cm);
+      // Smoothing the distance using Exponential Moving Average (EMA)
+      smoothedDistance = alpha * distance_cm + (1 - alpha) * smoothedDistance;
+
+      // Print smoothed distance for monitoring
+      Serial.print("Smoothed Distance: ");
+      Serial.print(smoothedDistance);
       Serial.println(" cm");
-
-      echoReceived = false; // Reset flag
     } else {
-      Serial.println("No echo received");
+      Serial.println("No Valid Reading");
     }
 
     vTaskDelay(pdMS_TO_TICKS(3000)); // Delay before next reading
