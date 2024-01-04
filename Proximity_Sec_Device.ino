@@ -1,3 +1,6 @@
+#include <ArduinoBLE.h>
+#include <ArduinoJson.h>
+
 #define TRIGGER_PIN 18 // Trigger pin connected to D18 on the ESP32
 #define ECHO_PIN 5    // Echo pin connected to D5 on the ESP32
 
@@ -70,11 +73,33 @@ void measuredDistance(void *pvParameters) {
   }
 }
 
+BLEService distanceService("19B10000-E8F2-537E-4F6C-D104768A1214");
+BLEFloatCharacteristic distanceCharacteristic("19B10001-E8F2-537E-4F6C-D104768A1214", BLERead | BLENotify);
+
+void setupBLE() {
+  BLE.begin();
+  BLE.setLocalName("DistanceSensor");
+
+  distanceService.addCharacteristic(distanceCharacteristic);
+  BLE.addService(distanceService);
+  distanceCharacteristic.writeValue(0);
+
+  BLE.advertise();
+
+  Serial.println("Bluetooth setup complete!");
+}
+
+void sendDistanceOverBLE(float distance) {
+  distanceCharacteristic.setValue(distance);
+} 
+
 void setup() {
   Serial.begin(115200);
   while (!Serial) {} // Wait for Serial to initialize
   
-  xTaskCreate(measuredDistance, "MeasuredDistance", configMINIMAL_STACK_SIZE * 2, NULL, 1, NULL);
+  xTaskCreate(measuredDistance, "MeasuredDistance", 1024, NULL, 1, NULL);
+  
+  setupBLE();
 }
 
 void loop() {
